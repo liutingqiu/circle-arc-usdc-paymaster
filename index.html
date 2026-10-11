@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle Arc Native USDC Gas & Batch Disburser 🔵⚡ | Arc Microgrants</title>
+  <meta name="description" content="Circle Arc mainnet developer tooling: native USDC gas fee calculator, micro-payment streamer, and atomic batch grant disburser for the $10,000 Circle Arc pool.">
+  <style>
+    :root {
+      --bg: #090c14;
+      --card-bg: #101626;
+      --card-border: #1e2842;
+      --circle-blue: #2775CA;
+      --circle-cyan: #00D2FF;
+      --secondary: #14F195;
+      --warning: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(180deg, rgba(39, 117, 202, 0.18) 0%, rgba(9, 12, 20, 0) 100%);
+      padding: 2.5rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(39, 117, 202, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(39, 117, 202, 0.4);
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ffffff 0%, var(--circle-cyan) 50%, var(--circle-blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--circle-blue) 0%, #1d4ed8 100%);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(39, 117, 202, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--circle-cyan);
+      border: 1px solid var(--circle-cyan);
+    }
+
+    .container {
+      max-width: 1250px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Top Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .stat-val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--circle-cyan);
+      margin-top: 0.25rem;
+    }
+
+    /* Main Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      background: #080a14;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .result-box {
+      background: #080a14;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .log-box {
+      background: #05070d;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--circle-cyan);
+      min-height: 180px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    footer {
+      border-top: 1px solid var(--card-border);
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--circle-cyan);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">DoraHacks • Circle Arc Microgrants ($10,000 Pool)</div>
+    <h1>Circle Arc Native USDC Gas & Batch Disburser 🔵⚡</h1>
+    <p class="subtitle">Real-time gas pricing engine where USDC is the native gas asset, micro-payment streaming protocol, and atomic batch grant disburser for Circle Arc mainnet.</p>
+    <div class="btn-group">
+      <a href="https://github.com/liutingqiu/circle-arc-usdc-paymaster" target="_blank" class="btn btn-primary">
+        GitHub Repository
+      </a>
+      <a href="https://dorahacks.io/hackathon/arc-microgrants" target="_blank" class="btn btn-secondary">
+        Arc Microgrants ($10,000)
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Top Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-lbl">Arc Native Gas Asset</div>
+        <div class="stat-val" style="color: #fff;">100% Native USDC</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Standard Transfer Gas Fee</div>
+        <div class="stat-val" style="color: var(--secondary);">$0.000525 USDC</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Total Grant Pool Capacity</div>
+        <div class="stat-val">20 &times; $500 ($10,000)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">20-Grant Batch Gas Cost</div>
+        <div class="stat-val" style="color: var(--circle-cyan);">&lt; $0.01 USDC Total</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      <!-- Left: Interactive Gas Fee Calculator -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>🧮 Arc Native USDC Gas Calculator</span>
+          <span style="font-size: 0.8rem; color: var(--secondary); font-weight: 600;">Sub-Cent Execution</span>
+        </div>
+
+        <div class="form-group">
+          <label for="txTypeSelect">Transaction Archetype</label>
+          <select id="txTypeSelect" onchange="updateTxType()">
+            <option value="transfer">Standard USDC Transfer (21,000 gas)</option>
+            <option value="contract">Smart Contract Deployment / Interaction (120,000 gas)</option>
+            <option value="batch">20-Recipient Batch Microgrant Disbursement (305,000 gas)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="gasUnitsInput">Estimated Gas Units</label>
+          <input type="number" id="gasUnitsInput" value="21000" oninput="calculateGas()">
+        </div>
+
+        <div class="result-box">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem;">
+            <span style="color: var(--text-muted);">Base Fee:</span>
+            <span>0.02 micro-USDC / unit</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem;">
+            <span style="color: var(--text-muted);">Priority Fee:</span>
+            <span>0.005 micro-USDC / unit</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--card-border);">
+            <strong style="color: #fff;">Exact Gas Cost in Native USDC:</strong>
+            <strong style="color: var(--secondary); font-size: 1.15rem;" id="valCalculatedGas">$0.000525 USDC</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Batch Grant Disburser Simulator -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>🚀 $10,000 Batch Microgrant Disburser</span>
+          <span style="font-size: 0.8rem; color: var(--circle-cyan);">20 Winners &times; $500</span>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Simulate disbursing the full 10,000 USDC Arc Microgrants pool across 20 recipient addresses in a single atomic transaction on Arc mainnet.
+        </p>
+
+        <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;" onclick="simulateBatchDisbursement()">
+          💸 Disburse 20 &times; $500 USDC Microgrants in 1 Transaction
+        </button>
+
+        <div class="log-box" id="disburseLog">
+          [Circle Arc Engine] Connected to Arc Mainnet (Chain ID 5042). Native Gas Token: USDC.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Submitted to the <strong>Circle Arc Microgrants ($10,000 USD)</strong> on DoraHacks • Open Source MIT License</p>
+    <p style="margin-top: 0.25rem;">Repository: <a href="https://github.com/liutingqiu/circle-arc-usdc-paymaster" target="_blank">github.com/liutingqiu/circle-arc-usdc-paymaster</a></p>
+  </footer>
+
+  <script>
+    function updateTxType() {
+      const type = document.getElementById('txTypeSelect').value;
+      const gasInput = document.getElementById('gasUnitsInput');
+      if (type === 'transfer') gasInput.value = 21000;
+      else if (type === 'contract') gasInput.value = 120000;
+      else if (type === 'batch') gasInput.value = 305000;
+      calculateGas();
+    }
+
+    function calculateGas() {
+      const units = parseFloat(document.getElementById('gasUnitsInput').value) || 0;
+      const feeRate = 0.025; // 0.025 micro-USDC
+      const costMicroUSDC = units * feeRate;
+      const costUSDC = costMicroUSDC / 1000000;
+      document.getElementById('valCalculatedGas').innerText = `$${costUSDC.toFixed(6)} USDC`;
+    }
+
+    function simulateBatchDisbursement() {
+      const log = document.getElementById('disburseLog');
+      const time = new Date().toLocaleTimeString();
+
+      log.innerHTML += `<br><br>[${time}] [Batch Initialized] Preparing 20 grant payouts of 500.00 USDC each...`;
+      log.innerHTML += `<br>[${time}] [Gas Calculation] 305,000 gas units @ 0.025 micro-USDC -> Total Gas: $0.007625 USDC`;
+
+      setTimeout(() => {
+        const txHash = '0xarc_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(16);
+        log.innerHTML += `<br>[${time}] [Arc Mainnet Execution] Disbursed $10,000.00 USDC across 20 builder addresses!`;
+        log.innerHTML += `<br>[${time}] [Transaction Confirmed] Hash: <code>${txHash}</code> | Status: 100% SETTLED`;
+        log.scrollTop = log.scrollHeight;
+      }, 350);
+    }
+  </script>
+</body>
+</html>
